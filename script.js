@@ -8,18 +8,23 @@ let user = {
     speed: 1
 };
 
+const token = '7840705618:AAFKZGp7HNulpLFOdBvvNOB2RMNgZ-53WlQ'; // التوكن الخاص بك
+const chat_id = 'ID_الـChat'; // قم بتحديد الـ chat_id الصحيح
+const messageTemplate = (coins) => `تمت عملية التعدين بنجاح! تم جمع ${coins} عملة.`;
+
 // بدء التعدين
 function startMining() {
     if (!isMining) {
         isMining = true;
         user.miningActive = true;
-        user.miningEndTime = Date.now() + 4 * 60 * 60 * 1000; // 4 ساعات
+        user.miningEndTime = Date.now() + 4 * 60 * 60 * 1000; // تحديد مدة التعدين بـ 4 ساعات
 
         miningInterval = setInterval(() => {
             const timeLeft = user.miningEndTime - Date.now();
             if (timeLeft <= 0) {
                 stopMining();
-                Swal.fire('انتهى الوقت!', 'يمكنك إعادة التشغيل', 'info');
+                Swal.fire('انتهى الوقت!', 'يمكنك إعادة البدء بعد الانتهاء.');
+                sendTelegramMessage(`تم الانتهاء من التعدين! تم جمع ${user.coins} عملة.`);
             } else {
                 user.coins += user.speed;
                 updateUI();
@@ -28,7 +33,7 @@ function startMining() {
             }
         }, 1000);
 
-        document.getElementById('startMiningBtn').textContent = '⛏️ جار التعدين...';
+        document.getElementById('startMiningBtn').textContent = 'إيقاف التعدين';
     } else {
         stopMining();
     }
@@ -39,7 +44,7 @@ function stopMining() {
     clearInterval(miningInterval);
     isMining = false;
     user.miningActive = false;
-    document.getElementById('startMiningBtn').textContent = '⚒️ بدء التعدين';
+    document.getElementById('startMiningBtn').textContent = 'بدء التعدين';
     document.getElementById('timer').textContent = '00:00:00';
 }
 
@@ -49,7 +54,7 @@ function updateTimer(timeLeft) {
     const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
 
-    document.getElementById('timer').textContent = 
+    document.getElementById('timer').textContent =
         `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
@@ -70,7 +75,17 @@ window.addEventListener('load', () => {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
         user = JSON.parse(savedUser);
-        showSection('mining');
         updateUI();
+        if (user.miningActive) {
+            startMining();
+        }
     }
 });
+
+// إرسال رسالة عبر تليغرام
+function sendTelegramMessage(message) {
+    fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chat_id}&text=${encodeURIComponent(message)}`)
+        .then(response => response.json())
+        .then(data => console.log('Telegram Response:', data))
+        .catch(error => console.error('Error:', error));
+}
