@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Mining Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.70.0/lib/index.iife.min.js"></script>
+    <script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
+    <style>
+        /* التصميمات */
+        :root {
+            --primary: #2ecc71;
+            --secondary: #3498db;
+            --dark: #2c3e50;
+            --accent: #f1c40f;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        body {
+            background: var(--dark);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* واجهة التسجيل */
+        #loginSection {
+            text-align: center;
+            padding-top: 50px;
+        }
+
+        .auth-btn {
+            background: var(--primary);
+            border: none;
+            padding: 15px 30px;
+            margin: 15px;
+            border-radius: 25px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: transform 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* واجهة التعدين الرئيسية */
+        #miningInterface {
+            display: none;
+        }
+
+        .mining-header {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .mining-area {
+            background: rgba(0,0,0,0.3);
+            padding: 30px;
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mining-animation {
+            width: 150px;
+            height: 150px;
+            margin: 20px auto;
+            background: url('mining.gif') no-repeat center;
+            background-size: contain;
+        }
+
+        /* متجر التعدين */
+        #storeSection {
+            display: none;
+        }
+
+        .store-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .store-item {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        /* المهام اليومية */
+        #tasksSection {
+            display: none;
+        }
+
+        .task-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .task-card {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* شريط التنقل */
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--dark);
+            padding: 10px;
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .nav-btn {
+            padding: 10px 20px;
+            border: none;
+            background: none;
+            color: white;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .nav-btn.active {
+            color: var(--accent);
+            border-bottom: 2px solid var(--accent);
+        }
+    </style>
+</head>
+<body>
+    <!-- قسم التسجيل -->
+    <div id="loginSection" class="container">
+        <h1>مرحبًا في Smart Mining Pro</h1>
+        <button class="auth-btn" onclick="loginWithTelegram()">
+            <img src="telegram-icon.png" width="30"> تسجيل الدخول عبر Telegram
+        </button>
+        <button class="auth-btn" onclick="connectWallet()">
+            <img src="wallet-icon.png" width="30"> تسجيل الدخول بالمحفظة
+        </button>
+    </div>
+
+    <!-- الواجهة الرئيسية -->
+    <div id="miningInterface" class="container">
+        <div class="mining-header">
+            <div>
+                <h2>مرحبًا، <span id="username">مستخدم</span></h2>
+                <p>العملات: <span id="coins">0</span> 🪙</p>
+            </div>
+            <div>
+                <p>المستوى: <span id="level">1</span></p>
+                <p>السرعة: <span id="speed">1</span>x</p>
+            </div>
+        </div>
+
+        <!-- منطقة التعدين -->
+        <div class="mining-area">
+            <div class="mining-animation"></div>
+            <button class="auth-btn" id="startMiningBtn" onclick="startMining()">⚒️ بدء التعدين</button>
+            <p>الوقت المتبقي: <span id="timer">04:00:00</span></p>
+        </div>
+    </div>
+
+    <!-- قسم المتجر -->
+    <div id="storeSection" class="container">
+        <h2>متجر التعدين</h2>
+        <div class="store-grid">
+            <div class="store-item">
+                <h3>حزمة سرعة أساسية</h3>
+                <p>+100% سرعة لمدة 24 ساعة</p>
+                <p>السعر: 2 USDT</p>
+                <button class="auth-btn" onclick="buyItem('basic-speed')">شراء</button>
+            </div>
+            <div class="store-item">
+                <h3>حزمة احترافية</h3>
+                <p>+300% سرعة لمدة 48 ساعة</p>
+                <p>السعر: 5 USDT</p>
+                <button class="auth-btn" onclick="buyItem('pro-speed')">شراء</button>
+            </div>
+            <div class="store-item">
+                <h3>شراء عملات</h3>
+                <p>30,000 عملة مقابل 10 SOL</p>
+                <small>ملاحظة: لكل 1 دولار تحصل على 5 دولار قيمة إضافية</small>
+                <button class="auth-btn" onclick="buyItem('coins-pack')">شراء</button>
+            </div>
+            <div class="store-item">
+                <h3>حزمة TON</h3>
+                <p>50,000 عملة مقابل 15 TON</p>
+                <button class="auth-btn" onclick="buyItem('ton-pack')">شراء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- قسم المهام -->
+    <div id="tasksSection" class="container">
+        <h2>المهام اليومية</h2>
+        <div class="task-grid">
+            <div class="task-card">
+                <div>
+                    <h4>اشترك في القناة</h4>
+                    <p>+10 عملات</p>
+                </div>
+                <button class="auth-btn" id="youtubeTaskBtn" onclick="completeTask('youtube')">إكمال</button>
+            </div>
+            <div class="task-card">
+                <div>
+                    <h4>انضم للتليجرام</h4>
+                    <p>+10 عملات</p>
+                </div>
+                <button class="auth-btn" id="telegramTaskBtn" onclick="completeTask('telegram')">إكمال</button>
+            </div>
+            <div class="task-card">
+                <div>
+                    <h4>شاهد الفيديو</h4>
+                    <p>+10 عملات</p>
+                </div>
+                <button class="auth-btn" id="videoTaskBtn" onclick="completeTask('video')">إكمال</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- شريط التنقل -->
+    <div class="nav-bar">
+        <button class="nav-btn active" onclick="showSection('mining')">التعدين</button>
+        <button class="nav-btn" onclick="showSection('store')">المتجر</button>
+        <button class="nav-btn" onclick="showSection('tasks')">المهام</button>
+    </div>
+
+    <script>
+        // حالة المستخدم
+        let user = {
+            address: null,
+            coins: 0,
+            level: 1,
+            speed: 1,
+            tasks: {},
+            miningActive: false,
+            miningEndTime: null
+        };
+
+        // عناوين المحافظ
+        const walletAddresses = {
+            usdt: 'TE2Uwqn84ntEVKCJ6WfPEzv4mzRvSrDwFv', // USDT (TRC-20)
+            solana: 'ESuxfgAxarnxLPknDgNGJUmKNKJbMaZT9YW1DNXN45a5', // Solana
+            ton: 'UQBjrip8-03Roq_0Qh831mZlDDhAApiET7cPheCjkbUitJqR' // TON
+        };
+
+        // تسجيل الدخول عبر Telegram
+        async function loginWithTelegram() {
+            const botId = 'YOUR_BOT_ID'; // استبدلها بمعرف البوت
+            const authUrl = `https://oauth.telegram.org/auth?bot_id=${botId}&origin=${encodeURIComponent(window.location.origin)}`;
+            
+            const authWindow = window.open(authUrl, 'tgAuth', 'width=500,height=600');
+            
+            window.addEventListener('message', (e) => {
+                if (e.origin === 'https://oauth.telegram.org') {
+                    user.address = `tg_${e.data.id}`;
+                    user.username = e.data.first_name;
+                    localStorage.setItem('user', JSON.stringify(user));
+                    showSection('mining');
+                    updateUI();
+                }
+            });
+        }
+
+        // تسجيل الدخول بالمحفظة
+        async function connectWallet() {
+            try {
+                if (window.ethereum || window.solana || window.tronWeb) {
+                    let address;
+                    if (window.ethereum) {
+                        const provider = new ethers.providers.Web3Provider(window.ethereum);
+                        const accounts = await provider.send("eth_requestAccounts", []);
+                        address = accounts[0];
+                    } else if (window.solana) {
+                        const provider = window.solana;
+                        await provider.connect();
+                        address = provider.publicKey.toString();
+                    } else if (window.tronWeb) {
+                        address = window.tronWeb.defaultAddress.base58;
+                    }
+
+                    user.address = address;
+                    localStorage.setItem('user', JSON.stringify(user));
+                    showSection('mining');
+                    updateUI();
+                } else {
+                    Swal.fire('خطأ!', 'الرجاء تثبيت محفظة إلكترونية', 'error');
+                }
+            } catch (error) {
+                Swal.fire('خطأ!', error.message, 'error');
+            }
+        }
+
+        // نظام التعدين
+        let miningInterval;
+        function startMining() {
+            if (!user.miningActive) {
+                user.miningActive = true;
+                user.miningEndTime = Date.now() + 4 * 60 * 60 * 1000; // 4 ساعات
+
+                miningInterval = setInterval(() => {
+                    const timeLeft = user.miningEndTime - Date.now();
+                    if (timeLeft <= 0) {
+                        clearInterval(miningInterval);
+                        user.miningActive = false;
+                        document.getElementById('startMiningBtn').textContent = '⚒️ بدء التعدين';
+                        document.getElementById('timer').textContent = '00:00:00';
+                        Swal.fire('انتهى الوقت!', 'يمكنك إعادة التشغيل', 'info');
+                    } else {
+                        user.coins += user.speed;
+                        updateUI();
+                        saveUserData();
+                        updateTimer(timeLeft);
+                    }
+                }, 1000);
+
+                document.getElementById('startMiningBtn').textContent = '⛏️ جار التعدين...';
+            }
+        }
+
+        // تحديث العداد
+        function updateTimer(timeLeft) {
+            const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+            document.getElementById('timer').textContent = 
+                `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        // إكمال المهام
+        async function completeTask(type) {
+            const taskButtons = {
+                youtube: document.getElementById('youtubeTaskBtn'),
+                telegram: document.getElementById('telegramTaskBtn'),
+                video: document.getElementById('videoTaskBtn')
+            };
+
+            const taskUrl = {
+                youtube: 'https://youtube.com/your-channel',
+                telegram: 'https://t.me/your-group',
+                video: 'https://your-domain.com/video'
+            };
+
+            const confirmed = await Swal.fire({
+                title: 'تنفيذ المهمة',
+                text: `سيتم فتح ${type === 'youtube' ? 'قناة اليوتيوب' : type === 'telegram' ? 'مجموعة التليجرام' : 'الفيديو'}`,
+                showCancelButton: true,
+                confirmButtonText: 'فتح',
+                cancelButtonText: 'إلغاء'
+            });
+
+            if (confirmed.isConfirmed) {
+                window.open(taskUrl[type], '_blank');
+                taskButtons[type].textContent = 'جار التحقق...';
+                taskButtons[type].disabled = true;
+
+                // التحقق من تنفيذ المهمة (يمكن استبداله بتحقق حقيقي)
+                setTimeout(() => {
+                    user.coins += 10;
+                    user.tasks[type] = true;
+                    taskButtons[type].textContent = 'تم الإكمال';
+                    updateUI();
+                    saveUserData();
+                }, 5000); // 5 ثواني للاختبار
+            }
+        }
+
+        // حفظ البيانات
+        function saveUserData() {
+            localStorage.setItem(user.address, JSON.stringify(user));
+        }
+
+        // تحميل البيانات
+        function loadUserData() {
+            const savedData = localStorage.getItem(user.address);
+            if (savedData) user = JSON.parse(savedData);
+            updateUI();
+        }
+
+        // تحديث الواجهة
+        function updateUI() {
+            document.getElementById('coins').textContent = user.coins;
+            document.getElementById('level').textContent = user.level;
+            document.getElementById('speed').textContent = user.speed;
+        }
+
+        // التنقل بين الأقسام
+        function showSection(section) {
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('[id$="Section"]').forEach(div => div.style.display = 'none');
+            
+            document.getElementById(`${section}Section`).style.display = 'block';
+            document.querySelector(`button[onclick="showSection('${section}')"]`).classList.add('active');
+        }
+
+        // التهيئة الأولية
+        window.addEventListener('load', () => {
+            const savedUser = localStorage.getItem('user');
+            if (savedUser) {
+                user = JSON.parse(savedUser);
+                showSection('mining');
+                updateUI();
+            }
+        });
+    </script>
+</body>
+</html> 
