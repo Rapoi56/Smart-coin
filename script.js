@@ -1,3 +1,31 @@
+const token = '7782763042:AAHNKGl9Y65n4Q8JgVQbQvtlLvg_toT2MwA';
+const chat_id = 'ID_الـChat'; // استبدله بالـ chat_id الفعلي
+
+const messageTemplate = (coins) => `تمت عملية التعدين بنجاح. لديك الآن ${coins} عملة`;
+
+function sendTelegramMessage(message) {
+    const url = `https://api.telegram.org/bot${token}/sendMessage`;
+    const data = {
+        chat_id: chat_id,
+        text: message
+    };
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('تم إرسال الرسالة بنجاح:', data);
+    })
+    .catch(error => {
+        console.error('حدث خطأ أثناء إرسال الرسالة:', error);
+    });
+}
+
 let miningInterval;
 let isMining = false;
 let user = {
@@ -8,23 +36,19 @@ let user = {
     speed: 1
 };
 
-const token = '7840705618:AAFKZGp7HNulpLFOdBvvNOB2RMNgZ-53WlQ'; // التوكن الخاص بك
-const chat_id = 'ID_الـChat'; // قم بتحديد الـ chat_id الصحيح
-const messageTemplate = (coins) => `تمت عملية التعدين بنجاح! تم جمع ${coins} عملة.`;
-
 // بدء التعدين
 function startMining() {
     if (!isMining) {
         isMining = true;
         user.miningActive = true;
-        user.miningEndTime = Date.now() + 4 * 60 * 60 * 1000; // تحديد مدة التعدين بـ 4 ساعات
+        user.miningEndTime = Date.now() + 4 * 60 * 60 * 1000; // 4 ساعات
 
         miningInterval = setInterval(() => {
             const timeLeft = user.miningEndTime - Date.now();
             if (timeLeft <= 0) {
                 stopMining();
-                Swal.fire('انتهى الوقت!', 'يمكنك إعادة البدء بعد الانتهاء.');
-                sendTelegramMessage(`تم الانتهاء من التعدين! تم جمع ${user.coins} عملة.`);
+                Swal.fire('انتهى الوقت!', 'يمكنك إعادة بدء التعدين');
+                sendTelegramMessage(`تم الانتهاء من عملية التعدين. لديك الآن ${user.coins} عملة.`);
             } else {
                 user.coins += user.speed;
                 updateUI();
@@ -75,17 +99,7 @@ window.addEventListener('load', () => {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
         user = JSON.parse(savedUser);
+        showSection('mining');
         updateUI();
-        if (user.miningActive) {
-            startMining();
-        }
     }
 });
-
-// إرسال رسالة عبر تليغرام
-function sendTelegramMessage(message) {
-    fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chat_id}&text=${encodeURIComponent(message)}`)
-        .then(response => response.json())
-        .then(data => console.log('Telegram Response:', data))
-        .catch(error => console.error('Error:', error));
-}

@@ -3,7 +3,7 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 import webbrowser
 
 # أمر /start
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         'مرحبًا! أنا بوت Smart Coin. 🪙\n'
         'يمكنك استخدام الأوامر التالية:\n'
@@ -12,20 +12,20 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 # أمر /mine
-async def mine(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text('لقد قمت بتعدين 1 Smart Coin! 🛠️')
+async def mine(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text('لقد قمت بتعدين 1 Smart Coin.')
 
 # أمر /open_page
-async def open_page(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def open_page(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # افتح صفحة ويب (مثل صفحة تعدين)
-    url = "https://example.com/mining_page"  # استبدل هذا الرابط برابط الصفحة التي تريد فتحها
+    url = "https://example.com/mining_page"  # استبدل هذا الرابط برابط صفحة التعدين الفعلي
     webbrowser.open(url)
-    await update.message.reply_text('تم فتح صفحة التعدين! ✅')
+    await update.message.reply_text('تم فتح صفحة التعدين.')
 
 # تشغيل البوت
 def main() -> None:
     # استبدال التوكن هنا
-    application = Application.builder().token("7840705618:AAFKZGp7HNulpLFOdBvvNOB2RMNgZ-53WlQ").build()
+    application = Application.builder().token("7782763042:AAHNKGl9Y65n4Q8JgVQbQvtlLvg_toT2MwA").build()
 
     # إضافة الأوامر
     application.add_handler(CommandHandler("start", start))
